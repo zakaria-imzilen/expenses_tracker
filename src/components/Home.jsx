@@ -1,18 +1,33 @@
 import { Button, Dialog } from "@mui/material";
 import { EmailAuthProvider, GoogleAuthProvider } from "firebase/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
 import { auth } from "../config/fbconfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+	const navigate = useNavigate();
+
 	const [login, setLogin] = useState(false);
 
 	// FIREBASE HERE ⚠⚠⚠
 	const uiConfig = {
 		signInFlow: "popup", // to get the user to fill his info in a pop up instead of a redirection page
 		signInSuccessUrl: "/dashboard",
-		signInOptions: [EmailAuthProvider.PROVIDER_ID, GoogleAuthProvider.PROVIDER_ID],
+		signInOptions: [
+			EmailAuthProvider.PROVIDER_ID,
+			GoogleAuthProvider.PROVIDER_ID,
+		],
 	};
+
+	useEffect(() => {
+		onAuthStateChanged(auth, async (user) => {
+			if (user) {
+				navigate("/dashboard");
+			}
+		});
+	}, []);
 
 	return (
 		<>
@@ -24,7 +39,7 @@ const Home = () => {
 					<h1 className="display-4 my-5 text-dark">
 						Hello 👋🏻, it's the first time ZAKARIA is working 👨🏻‍💻
 						<br /> with Firebase Authentication 👨🏻‍💻, Storage 🕸 & Firestore
-						 Storage 🚀
+						Storage 🚀
 					</h1>
 
 					<Button

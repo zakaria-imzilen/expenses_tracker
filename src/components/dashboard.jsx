@@ -5,7 +5,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/fbconfig";
-import { setUser, uploadExpenseImg } from "../features/userSlice";
+import {
+	addReceipt,
+	getUserReceipts,
+	setUser,
+	uploadExpenseImg,
+} from "../features/userSlice";
 import Loader from "./Loader";
 import {
 	Alert,
@@ -20,6 +25,8 @@ import {
 	OutlinedInput,
 	TextField,
 } from "@mui/material";
+import LoadingButton from "@mui/lab/LoadingButton";
+import Receipt from "./Receipt";
 
 const Dashboard = () => {
 	const user = useSelector((state) => state.user);
@@ -27,25 +34,39 @@ const Dashboard = () => {
 	const dispatch = useDispatch();
 
 	const [expensesWindowStatus, setExpensesWindowStatus] = useState(false);
-	const [date, setDate] = useState(new Date());
+	const [dateReceipt, setDateReceipet] = useState(new Date());
 	const [name, setName] = useState("");
 	const [img, setImg] = useState();
 	const [amount, setAmount] = useState(0);
 
 	const imgRef = useRef(null);
 
-	const handleSubmit = () => {
+	const handleSubmit = async () => {
+		let imgURLReturned;
 		if (img) {
 			try {
-				dispatch(uploadExpenseImg(img, user.userAuth.id));
+				imgURLReturned = await dispatch(
+					uploadExpenseImg({ img, uid: user.userAuth.id })
+				);
 			} catch (error) {
 				alert(error);
 			}
 		}
+
+		if (name.length > 4 && parseInt(amount) > 0) {
+			await dispatch(
+				addReceipt({
+					uid: user.userAuth.id,
+					dateReceipt: dateReceipt,
+					name: name,
+					amount: amount,
+					imgURL: imgURLReturned.payload,
+				})
+			);
+		}
 	};
 
 	useEffect(() => {
-		// FIREBASE HERE ⚠⚠⚠
 		onAuthStateChanged(auth, async (user) => {
 			if (user) {
 				dispatch(
@@ -54,11 +75,39 @@ const Dashboard = () => {
 						email: user.email,
 					})
 				);
+				dispatch(getUserReceipts(user.uid));
 			} else {
 				navigate("/");
 			}
 		});
 	}, [dispatch, navigate]);
+
+	const renderAlertResultOfUpload = () => {
+		if (user?.imgUploaded === true && user?.receiptUploaded === true) {
+			<Alert severity="success">Uploaded successfuly</Alert>;
+		} else if (user?.imgUploaded === null && user?.receiptUploaded === null) {
+			return;
+		} else if (
+			user?.imgUploaded === true &&
+			(user?.receiptUploaded === false || user?.receiptUploaded === null)
+		) {
+			return (
+				<>
+					<Alert severity="success">Image uploaded successfuly!</Alert>
+					<Alert severity="error">Failed to upload the receipt</Alert>
+				</>
+			);
+		} else if (user?.imgUploaded === false && user?.receiptUploaded === true) {
+			return (
+				<>
+					<Alert severity="success">Receipt added successfuly!</Alert>
+					<Alert severity="error">Failed to upload the image</Alert>
+				</>
+			);
+		} else {
+			return <Alert severity="error">Failed!</Alert>;
+		}
+	};
 
 	useEffect(() => {
 		if (user.imgUploadedURL !== null) {
@@ -66,13 +115,28 @@ const Dashboard = () => {
 		}
 	}, [user]);
 
+	const renderReceiptsCards = () => {
+		if (user?.gettingReceipts === true) {
+			return user?.allReceipts.map((receipt) => <Receipt data={receipt} />);
+		} else if (user?.gettingReceipts === "pending") {
+			<Loader />;
+		} else {
+			return (
+				<h6 className="text-center position-absolute top-50 left-50 translate-middle">
+					No receipts yet
+				</h6>
+			);
+		}
+	};
+
 	if (user.userAuth === null) {
 		return <Loader />;
 	} else {
 		return (
 			<div className="dashboard">
-				{user?.imgUploadedURL !== null && (
-					<Alert severity="success">Uploaded successfuly</Alert>
+				{renderAlertResultOfUpload()}
+				{user?.imgUploaded === true && user?.receiptUploaded === true && (
+					<Alert severity="success">Added successfuly!</Alert>
 				)}
 
 				<Navbar email={user.userAuth.email} />
@@ -96,8 +160,8 @@ const Dashboard = () => {
 							name="date"
 							id="date"
 							className="form-control mb-4"
-							value={date}
-							onChange={({ target }) => setDate(target.value)}
+							value={dateReceipt}
+							onChange={({ target }) => setDateReceipet(target.value)}
 						/>
 
 						<input
@@ -135,11 +199,26 @@ const Dashboard = () => {
 						</FormControl>
 					</DialogContent>
 					<DialogActions>
-						<Button onClick={handleSubmit} autoFocus variant="contained">
-							Add
-						</Button>
+						{user.receiptUploaded === "pending" ? (
+							<LoadingButton
+								size="small"
+								loadingIndicator="Loading…"
+								variant="outlined"
+							>
+								Fetch data
+							</LoadingButton>
+						) : (
+							<Button onClick={handleSubmit} autoFocus variant="contained">
+								Add
+							</Button>
+						)}
 					</DialogActions>
 				</Dialog>
+
+				{/* Display receipts */}
+				<div className="receipts d-flex gap-3 justify-content-center">
+					{renderReceiptsCards()}
+				</div>
 			</div>
 		);
 	}

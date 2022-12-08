@@ -1,6 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyCaI2qpMVbweHvM15zYdzAZ2s7CdxaQ9KI",
@@ -17,3 +19,14 @@ const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+export const storage = getStorage();
+// FIREBASE Firestore HERE ⚠⚠⚠
+export const db = getFirestore();
+// FIREBASE Firestore GET HERE ⚠⚠⚠
+export const convertStorageImgURL = async (imgURL) => {
+	const finalURL = await getDownloadURL(ref(storage, imgURL)).then(
+		(url) => url
+	);
+	return finalURL;
+};
