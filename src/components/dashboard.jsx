@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import Receipt from "./Receipt";
+import CachedIcon from "@mui/icons-material/Cached";
 
 const Dashboard = () => {
 	const user = useSelector((state) => state.user);
@@ -42,6 +43,8 @@ const Dashboard = () => {
 	const imgRef = useRef(null);
 
 	const handleSubmit = async () => {
+		setLoad(true);
+
 		let imgURLReturned;
 		if (img) {
 			try {
@@ -64,6 +67,7 @@ const Dashboard = () => {
 				})
 			);
 		}
+		setLoad(false);
 	};
 
 	useEffect(() => {
@@ -117,7 +121,9 @@ const Dashboard = () => {
 
 	const renderReceiptsCards = () => {
 		if (user?.gettingReceipts === true) {
-			return user?.allReceipts.map((receipt) => <Receipt data={receipt} />);
+			return user?.allReceipts.map((receipt) => (
+				<Receipt key={receipt.uid} data={receipt} />
+			));
 		} else if (user?.gettingReceipts === "pending") {
 			<Loader />;
 		} else {
@@ -128,6 +134,12 @@ const Dashboard = () => {
 			);
 		}
 	};
+
+	const rerenderReceipts = () => {
+		dispatch(getUserReceipts(user.userAuth.id));
+	};
+
+	const [load, setLoad] = useState(false);
 
 	if (user.userAuth === null) {
 		return <Loader />;
@@ -141,12 +153,17 @@ const Dashboard = () => {
 
 				<Navbar email={user.userAuth.email} />
 
-				<div className="container mx-auto my-5 d-flex justify-content-around align-items-center">
+				<div className="container mx-auto my-5 d-flex gap-3 justify-content-around align-items-center">
 					<h3 className="display-3 col">Expenses</h3>
 					<i
 						onClick={() => setExpensesWindowStatus(true)}
 						className="bi bi-plus-circle fs-5"
 					></i>
+					<CachedIcon
+						style={{ cursor: "pointer" }}
+						color="primary"
+						onClick={rerenderReceipts}
+					/>
 				</div>
 
 				<Dialog
@@ -199,13 +216,9 @@ const Dashboard = () => {
 						</FormControl>
 					</DialogContent>
 					<DialogActions>
-						{user.receiptUploaded === "pending" ? (
-							<LoadingButton
-								size="small"
-								loadingIndicator="Loading…"
-								variant="outlined"
-							>
-								Fetch data
+						{load ? (
+							<LoadingButton loading variant="outlined">
+								Submit
 							</LoadingButton>
 						) : (
 							<Button onClick={handleSubmit} autoFocus variant="contained">
@@ -216,7 +229,10 @@ const Dashboard = () => {
 				</Dialog>
 
 				{/* Display receipts */}
-				<div className="receipts d-flex gap-3 justify-content-center">
+				<div
+					className="mx-auto receipts row row-cols-5 flex-wrap gap-3 justify-content-center"
+					style={{ maxWidth: "80vw" }}
+				>
 					{renderReceiptsCards()}
 				</div>
 			</div>

@@ -8,7 +8,7 @@ import { CardActionArea } from "@mui/material";
 const Receipt = ({ data }) => {
 	console.log(data);
 	return (
-		<Card sx={{ maxWidth: 345 }}>
+		<Card className="col" sx={{ maxWidth: 345 }}>
 			<CardActionArea>
 				<CardMedia
 					component="img"
@@ -18,10 +18,10 @@ const Receipt = ({ data }) => {
 				/>
 				<CardContent>
 					<Typography gutterBottom variant="h5" component="div">
-						{data.name}{" "}
-						<Typography variant="body2" color="text.secondary">
-							{data.uid}
-						</Typography>
+						{data.name}
+					</Typography>
+					<Typography variant="body2" color="text.secondary">
+						{data.dateReceipt}
 					</Typography>
 					<Typography variant="body2" color="text.secondary">
 						{data.amount}MAD

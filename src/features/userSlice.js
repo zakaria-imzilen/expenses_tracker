@@ -47,6 +47,7 @@ export const getUserReceipts = createAsyncThunk(
 			allReceipts.push({
 				...receipt.data(),
 				imgURL: await convertStorageImgURL(receipt.data().imgURL),
+				dateReceipt: receipt.data().dateReceipt,
 			});
 		}
 
