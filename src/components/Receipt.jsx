@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import { Button, CardActions, TextField } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import {
+	getUserReceipts,
 	resetIsEdit,
 	setDocToEdit,
 	updateReceipt,
@@ -38,7 +39,7 @@ const Receipt = ({ data }) => {
 		newAmount: false,
 	});
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		if (newImg !== undefined) {
 			// Check if the image has been changed
 			dispatch(updateReceiptImg({ oldImg: data.imgURL, newImg: newImg }));
@@ -61,7 +62,7 @@ const Receipt = ({ data }) => {
 				newDate !== data.dateReceipt
 			) {
 				// --- dispatch(updateReceipt(...))
-				dispatch(
+				await dispatch(
 					updateReceipt({
 						id: data.id,
 						uid: data.uid,
@@ -71,6 +72,9 @@ const Receipt = ({ data }) => {
 						imgURL: data.imgURL,
 					})
 				);
+				await dispatch(getUserReceipts(data.uid));
+				await dispatch(resetIsEdit());
+				setIsItMe(false);
 			}
 		}
 	};

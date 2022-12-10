@@ -53,6 +53,19 @@ const Dashboard = () => {
 		}
 	}, [user.isEdit, user.docToEditId]);
 
+	// Loader
+	const [loadNow, setLoadNow] = useState(false);
+	useEffect(() => {
+		if (
+			user.gettingReceipts === "pending" ||
+			user.receiptUploaded === "pending"
+		) {
+			setLoadNow(true);
+		} else {
+			setLoadNow(false);
+		}
+	}, [user.gettingReceipts, user.receiptUploaded]);
+
 	const handleSubmit = async () => {
 		setLoad(true);
 
@@ -157,6 +170,7 @@ const Dashboard = () => {
 	} else {
 		return (
 			<div className="dashboard">
+				{loadNow && <Loader />}
 				{renderAlertResultOfUpload()}
 				{user?.imgUploaded === true && user?.receiptUploaded === true && (
 					<Alert severity="success">Added successfuly!</Alert>
