@@ -1,10 +1,11 @@
 import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
 import { useEffect, useRef, useState } from "react";
+
+import { doc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../config/fbconfig";
+import { auth, db } from "../config/fbconfig";
 import {
 	addReceipt,
 	getUserReceipts,
@@ -41,6 +42,16 @@ const Dashboard = () => {
 	const [amount, setAmount] = useState(0);
 
 	const imgRef = useRef(null);
+
+	useEffect(() => {
+		if (user.isEdit) {
+			const unsub = onSnapshot(doc(db, "Receipts", user.docToEditId), (doc) => {
+				console.log("Current data: ", doc.data());
+			});
+
+			return () => unsub();
+		}
+	}, [user.isEdit, user.docToEditId]);
 
 	const handleSubmit = async () => {
 		setLoad(true);
@@ -122,7 +133,7 @@ const Dashboard = () => {
 	const renderReceiptsCards = () => {
 		if (user?.gettingReceipts === true) {
 			return user?.allReceipts.map((receipt) => (
-				<Receipt key={receipt.uid} data={receipt} />
+				<Receipt key={receipt.id} data={receipt} />
 			));
 		} else if (user?.gettingReceipts === "pending") {
 			<Loader />;
@@ -185,7 +196,7 @@ const Dashboard = () => {
 							className="form-control"
 							type="file"
 							name="img"
-							id="img"
+							id="fileImgNewReceipt"
 							ref={imgRef}
 							onChange={() => {
 								setImg(imgRef.current.files[0]);
@@ -218,11 +229,11 @@ const Dashboard = () => {
 					<DialogActions>
 						{load ? (
 							<LoadingButton loading variant="outlined">
-								Submit
+								updating..
 							</LoadingButton>
 						) : (
 							<Button onClick={handleSubmit} autoFocus variant="contained">
-								Add
+								Update
 							</Button>
 						)}
 					</DialogActions>
@@ -230,7 +241,7 @@ const Dashboard = () => {
 
 				{/* Display receipts */}
 				<div
-					className="mx-auto receipts row row-cols-5 flex-wrap gap-3 justify-content-center"
+					className="mx-auto mb-5 receipts row row-cols-5 flex-wrap gap-3 justify-content-center"
 					style={{ maxWidth: "80vw" }}
 				>
 					{renderReceiptsCards()}

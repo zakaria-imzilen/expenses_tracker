@@ -2,9 +2,10 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
 	addDoc,
 	collection,
+	doc,
 	getDocs,
-	orderBy,
 	query,
+	setDoc,
 	where,
 } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
@@ -48,12 +49,32 @@ export const getUserReceipts = createAsyncThunk(
 				...receipt.data(),
 				imgURL: await convertStorageImgURL(receipt.data().imgURL),
 				dateReceipt: receipt.data().dateReceipt,
+				id: receipt.id,
 			});
 		}
 
 		return allReceipts;
 	}
 );
+
+// FIREBASE Firestore UPDATE IMG HERE ⚠⚠⚠
+export const updateReceiptImg = createAsyncThunk(
+	"updateReceiptImg",
+	async (thunkAPI) => {
+		await uploadBytes(ref(storage, thunkAPI.oldImg), thunkAPI.newImg);
+	}
+);
+
+// FIREBASE Firestore UPDATE HERE ⚠⚠⚠
+export const updateReceipt = createAsyncThunk("updateReceipt", (thunkAPI) => {
+	setDoc(doc(db, "Receipts", thunkAPI.id), {
+		uid: thunkAPI.uid,
+		dateReceipt: thunkAPI.dateReceipt,
+		name: thunkAPI.name,
+		amount: thunkAPI.amount,
+		imgURL: thunkAPI.imgURL,
+	});
+});
 
 const userSlice = createSlice({
 	name: "user",
@@ -64,6 +85,8 @@ const userSlice = createSlice({
 		receiptUploaded: null,
 		allReceipts: [],
 		gettingReceipts: null,
+		isEdit: false,
+		docToEditId: null,
 	},
 	reducers: {
 		setUser: (state, { payload }) => {
@@ -74,6 +97,14 @@ const userSlice = createSlice({
 		},
 		resetUser: (state) => {
 			state.userAuth = null;
+		},
+		setDocToEdit: (state, { payload }) => {
+			state.isEdit = true;
+			state.docToEditId = payload;
+		},
+		resetIsEdit: (state) => {
+			state.isEdit = false;
+			state.docToEditId = null;
 		},
 	},
 	extraReducers: (builder) => {
@@ -107,8 +138,10 @@ const userSlice = createSlice({
 		builder.addCase(getUserReceipts.rejected, (state) => {
 			state.gettingReceipts = false;
 		});
+		// Update Receipt
 	},
 });
 
 export default userSlice.reducer;
-export const { setUser, resetUser } = userSlice.actions;
+export const { setUser, resetUser, setDocToEdit, resetIsEdit } =
+	userSlice.actions;
