@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
@@ -6,12 +12,15 @@ import Typography from "@mui/material/Typography";
 import { Button, CardActions, TextField } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import {
+	deleteReceipt,
 	getUserReceipts,
 	resetIsEdit,
 	setDocToEdit,
 	updateReceipt,
 	updateReceiptImg,
 } from "../features/userSlice";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 
 const Receipt = ({ data }) => {
 	const user = useSelector((state) => state.user);
@@ -78,6 +87,9 @@ const Receipt = ({ data }) => {
 			}
 		}
 	};
+
+	// Delete Dialog togglers
+	const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
 	return (
 		<>
@@ -162,18 +174,57 @@ const Receipt = ({ data }) => {
 							</Button>
 						</>
 					) : (
-						<Button
-							onClick={() => {
-								dispatch(resetIsEdit());
-								dispatch(setDocToEdit(data.id));
-							}}
-							variant="text"
-						>
-							Edit
-						</Button>
+						<div className="mb-3 d-flex gap-2 justify-content-end w-100">
+							<EditIcon
+								className="actionsReceipt"
+								onClick={() => {
+									dispatch(resetIsEdit());
+									dispatch(setDocToEdit(data.id));
+								}}
+								fontSize="small"
+								color="primary"
+							/>
+							<DeleteIcon
+								className="actionsReceipt"
+								fontSize="small"
+								color="error"
+								onClick={() => setOpenDeleteDialog(true)}
+							/>
+						</div>
 					)}
 				</CardActions>
 			</Card>
+
+			<Dialog
+				open={openDeleteDialog}
+				onClose={() => setOpenDeleteDialog(false)}
+				aria-labelledby="alert-dialog-title"
+				aria-describedby="alert-dialog-description"
+			>
+				<DialogTitle id="alert-dialog-title">
+					{"Sure you want to delete this receipt"}
+				</DialogTitle>
+				<DialogContent>
+					<DialogContentText id="alert-dialog-description">
+						You cannot recover it once deleted.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+					<Button
+						variant="contained"
+						color="error"
+						onClick={async () => {
+							await dispatch(deleteReceipt({ id: data.id, img: data.imgURL }));
+							await dispatch(getUserReceipts(data.uid));
+							setOpenDeleteDialog(false);
+						}}
+						autoFocus
+					>
+						DELETE
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</>
 	);
 };

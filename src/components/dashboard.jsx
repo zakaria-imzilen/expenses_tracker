@@ -58,17 +58,30 @@ const Dashboard = () => {
 	useEffect(() => {
 		if (
 			user.gettingReceipts === "pending" ||
-			user.receiptUploaded === "pending"
+			user.receiptUploaded === "pending" ||
+			user.deleteReceipt === "pending"
 		) {
 			setLoadNow(true);
 		} else {
 			setLoadNow(false);
 		}
-	}, [user.gettingReceipts, user.receiptUploaded]);
+	}, [user.gettingReceipts, user.receiptUploaded, user.deleteReceipt]);
+
+	// Loader
+	const [errorAlert, setErrorAlert] = useState(false);
+	useEffect(() => {
+		if (
+			user.gettingReceipts === false ||
+			user.receiptUploaded === false ||
+			user.deleteReceipt === false
+		) {
+			setErrorAlert(true);
+		} else {
+			setErrorAlert(false);
+		}
+	}, [user.gettingReceipts, user.receiptUploaded, user.deleteReceipt]);
 
 	const handleSubmit = async () => {
-		setLoad(true);
-
 		let imgURLReturned;
 		if (img) {
 			try {
@@ -91,7 +104,6 @@ const Dashboard = () => {
 				})
 			);
 		}
-		setLoad(false);
 	};
 
 	useEffect(() => {
@@ -163,7 +175,7 @@ const Dashboard = () => {
 		dispatch(getUserReceipts(user.userAuth.id));
 	};
 
-	const [load, setLoad] = useState(false);
+	const [alertStatus, setAlertStatus] = useState(false);
 
 	if (user.userAuth === null) {
 		return <Loader />;
@@ -171,6 +183,11 @@ const Dashboard = () => {
 		return (
 			<div className="dashboard">
 				{loadNow && <Loader />}
+				{errorAlert && (
+					<Alert color="error" onClose={() => setAlertStatus(false)}>
+						Sorry, something went wrong!
+					</Alert>
+				)}
 				{renderAlertResultOfUpload()}
 				{user?.imgUploaded === true && user?.receiptUploaded === true && (
 					<Alert severity="success">Added successfuly!</Alert>
@@ -241,15 +258,9 @@ const Dashboard = () => {
 						</FormControl>
 					</DialogContent>
 					<DialogActions>
-						{load ? (
-							<LoadingButton loading variant="outlined">
-								updating..
-							</LoadingButton>
-						) : (
-							<Button onClick={handleSubmit} autoFocus variant="contained">
-								Update
-							</Button>
-						)}
+						<Button onClick={handleSubmit} autoFocus variant="contained">
+							Update
+						</Button>
 					</DialogActions>
 				</Dialog>
 

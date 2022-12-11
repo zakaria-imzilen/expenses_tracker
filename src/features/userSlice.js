@@ -2,13 +2,14 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
 	addDoc,
 	collection,
+	deleteDoc,
 	doc,
 	getDocs,
 	query,
 	setDoc,
 	where,
 } from "firebase/firestore";
-import { ref, uploadBytes } from "firebase/storage";
+import { deleteObject, ref, uploadBytes } from "firebase/storage";
 import { convertStorageImgURL, db, storage } from "../config/fbconfig";
 
 // FIREBASE UPLOAD FUNCTION 👇🏻
@@ -76,6 +77,15 @@ export const updateReceipt = createAsyncThunk("updateReceipt", (thunkAPI) => {
 	});
 });
 
+// FIREBASE Firestore DELETE HERE ⚠⚠⚠
+export const deleteReceipt = createAsyncThunk(
+	"deleteReceipt",
+	async (thunkAPI) => {
+		await deleteDoc(doc(db, "Receipts", thunkAPI.id));
+		await deleteObject(ref(storage, thunkAPI.img));
+	}
+);
+
 const userSlice = createSlice({
 	name: "user",
 	initialState: {
@@ -87,6 +97,7 @@ const userSlice = createSlice({
 		gettingReceipts: null,
 		isEdit: false,
 		docToEditId: null,
+		docDeleting: null,
 	},
 	reducers: {
 		setUser: (state, { payload }) => {
@@ -105,6 +116,9 @@ const userSlice = createSlice({
 		resetIsEdit: (state) => {
 			state.isEdit = false;
 			state.docToEditId = null;
+		},
+		resetDocDeletingStatus: (state) => {
+			state.docDeleting = null;
 		},
 	},
 	extraReducers: (builder) => {
@@ -138,10 +152,24 @@ const userSlice = createSlice({
 		builder.addCase(getUserReceipts.rejected, (state) => {
 			state.gettingReceipts = false;
 		});
-		// Update Receipt
+		// DELETE Receipt
+		builder.addCase(deleteReceipt.pending, (state) => {
+			state.docDeleting = "pending";
+		});
+		builder.addCase(deleteReceipt.fulfilled, (state) => {
+			state.docDeleting = true;
+		});
+		builder.addCase(deleteReceipt.rejected, (state) => {
+			state.docDeleting = false;
+		});
 	},
 });
 
 export default userSlice.reducer;
-export const { setUser, resetUser, setDocToEdit, resetIsEdit } =
-	userSlice.actions;
+export const {
+	setUser,
+	resetUser,
+	setDocToEdit,
+	resetIsEdit,
+	resetDocDeletingStatus,
+} = userSlice.actions;
